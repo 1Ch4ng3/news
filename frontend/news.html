@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Page</title>
+    <!-- Подключение Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1>Latest News</h1>
+        <div class="row" id="newsContainer">
+            <!-- Здесь будут отображаться новости -->
+        </div>
+    </div>
+
+    <!-- Подключение Bootstrap JS (необходимо для работы карточек и модального окна) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <!-- Скрипт для загрузки новостей и отображения их в виде карточек -->
+    <script>
+        function loadNews() {
+            fetch('/news') // Запрос к серверу для получения списка новостей
+                .then(response => response.json()) // Преобразование ответа в формат JSON
+                .then(news => {
+                    const newsContainer = document.getElementById('newsContainer');
+                    news.forEach(item => {
+                        // Обрезаем описание до определенной длины символов
+                        const maxLength = 100; // Максимальная длина описания
+                        const description = item.description.length > maxLength ? item.description.substring(0, maxLength) + '...' : item.description;
+                        // Создание карточки для каждой новости
+                        const card = `
+                            <div class="col-md-4 mb-4">
+                                <div class="card">
+                                    <img src="${item.image}" class="card-img-top" alt="News Image">
+                                    <div class="card-body">
+                                        <h5 class="card-title">${item.title}</h5>
+                                        <p class="card-text">${description}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        // Добавление карточки в контейнер
+                        newsContainer.innerHTML += card;
+                    });
+                })
+                .catch(error => console.error('Error loading news:', error)); // Обработка ошибок
+        }
+    
+        // Вызов функции загрузки новостей при загрузке страницы
+        document.addEventListener('DOMContentLoaded', loadNews);
+    </script>
+    
+</body>
+</html>
