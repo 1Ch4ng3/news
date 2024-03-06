@@ -5,10 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"io/ioutil"
 	"log"
 	"myapp/database"
 	"net/http"
+	"os"
+	"path"
+	"path/filepath"
 
 	"github.com/gorilla/mux"
 )
@@ -25,10 +29,12 @@ func main() {
 
 	// Обработчик для статических файлов из папки frontend
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./frontend"))))
-	http.Handle("/images/", http.StripPrefix("/images/", http.FileServer(http.Dir("./backend/images"))))
 
 	// Создаем новый экземпляр маршрутизатора mux
 	router := mux.NewRouter()
+
+	// Добавляем маршрут для обработки изображений
+	router.HandleFunc("/images/{imageName}", imageHandler).Methods("GET")
 
 	// Настройка маршрутов для API-запросов
 	router.HandleFunc("/category", func(w http.ResponseWriter, r *http.Request) {
@@ -69,6 +75,26 @@ func main() {
 		}
 	})
 
+	// Настройка обработчика для получения подробной информации о новости
+		router.HandleFunc("/news_detail/{id}", func(w http.ResponseWriter, r *http.Request) {
+			vars := mux.Vars(r)
+			newsID := vars["id"]
+			
+			// Выполнение запроса к базе данных для получения подробной информации о новости по идентификатору
+			var news Task
+			err := db.QueryRow("SELECT * FROM tasks WHERE id = ?", newsID).Scan(&news.ID, &news.Title, &news.Description, &news.Image, &news.CategoryID, &news.CreatedAt, &news.UpdatedAt)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			
+			// Отправка JSON с данными о новости обратно клиенту
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(news)
+		}).Methods("GET")
+
+		
 	// Start the HTTP server
 	fmt.Println("Server is running on http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", router))
@@ -107,6 +133,29 @@ func allCategory(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	}
 }
 
+func imageHandler(w http.ResponseWriter, r *http.Request) {
+	// Получаем имя запрошенного изображения из URL
+	imageName := path.Base(r.URL.Path)
+
+	// Здесь предполагается, что ваши изображения находятся в папке "images"
+	imagePath := "../backend/images/" + imageName
+
+	// Открываем файл с изображением
+	imageFile, err := os.Open(imagePath)
+	if err != nil {
+		http.Error(w, "Image not found", http.StatusNotFound)
+		return
+	}
+	defer imageFile.Close()
+
+	// Копируем содержимое файла в ответ
+	_, err = io.Copy(w, imageFile)
+	if err != nil {
+		http.Error(w, "Failed to send image", http.StatusInternalServerError)
+		return
+	}
+}
+
 // Task структура представляет данные о задаче
 type Task struct {
 	ID          int    `json:"id"`
@@ -141,11 +190,7 @@ func allTasks(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
-		// Формируем абсолютный URL-адрес для изображения
-		imageURL := fmt.Sprintf("http://D:/praktika/backend/images/%s", task.Image)
-		task.Image = imageURL
-
+		task.Image = filepath.Base(task.Image)
 		// Добавляем структуру с данными об отдельной задаче в слайс задач
 		tasks = append(tasks, task)
 	}
@@ -153,6 +198,30 @@ func allTasks(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	// Преобразуем слайс структур в JSON и отправляем в ответ на запрос
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(tasks); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+// Функция для получения данных о задаче по её ID из базы данных
+func taskByID(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+	// Получаем параметр {id} из URL
+	params := mux.Vars(r)
+	taskID := params["id"]
+
+	// Здесь ваш код для получения информации о задаче с указанным ID из базы данных
+	// Пример: выполнение запроса к базе данных и получение данных о задаче
+	// Замените этот код на свою реализацию
+	var task Task
+	err := db.QueryRow("SELECT * FROM tasks WHERE id=?", taskID).Scan(&task.ID, &task.Title, &task.Description, &task.Image, &task.CategoryID, &task.CreatedAt, &task.UpdatedAt)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Преобразуем структуру с данными о задаче в JSON и отправляем в ответ на запрос
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(task); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
