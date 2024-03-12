@@ -27,6 +27,11 @@
         <div id="newsDetailContainer">
             <!-- Здесь будет отображаться подробная информация о новости -->
         </div>
+
+        <!-- Кнопка "Назад" для перехода на страницу news-page -->
+        <div class="mt-3">
+            <button onclick="goBack()" class="btn btn-primary">Назад</button>
+        </div>
     </div>
 
     <!-- Подключение Bootstrap JS (необходимо для работы навигационного меню) -->
@@ -37,25 +42,46 @@
     <!-- JavaScript код для загрузки подробной информации о новости -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Получаем идентификатор новости из URL-адреса
-            const urlParams = new URLSearchParams(window.location.search);
-            const newsId = urlParams.get('id');
-
-            // Отправляем запрос на сервер для получения подробной информации о новости с заданным идентификатором
-            fetch(`/news_detail/${newsId}`)
-                .then(response => response.json())
-                .then(news => {
-                    // Обновляем DOM, используя полученные данные о новости
-                    const newsDetailContainer = document.getElementById('newsDetailContainer');
-                    newsDetailContainer.innerHTML = `
-                        <h2>${news.title}</h2>
-                        <p>${news.description}</p>
-                        <img src="../images/${news.image}" alt="News Image">
-                        <!-- Другие детали новости -->
-                    `;
-                })
-                .catch(error => console.error('Error loading news detail:', error));
+            // Получаем текущий URL-адрес страницы
+            const currentUrl = window.location.href;
+    
+            // Разбиваем URL-адрес по символу "/"
+            const urlParts = currentUrl.split('/');
+    
+            // Получаем последнюю часть URL-адреса, которая содержит `id`
+            const lastUrlPart = urlParts[urlParts.length - 1];
+    
+            // Парсим `id` как целое число
+            const taskId = parseInt(lastUrlPart);
+    
+            // Проверяем, получилось ли успешно извлечь `id`
+            if (!isNaN(taskId)) {
+                console.log('Task ID:', taskId);
+    
+                // Отправляем запрос на сервер для получения подробной информации о новости с заданным идентификатором
+                fetch(`/news_detail/${taskId}`)
+                    .then(response => response.json())
+                    .then(news => {
+                        // Обновляем DOM, используя полученные данные о новости
+                        const newsDetailContainer = document.getElementById('newsDetailContainer');
+                        newsDetailContainer.innerHTML = `
+                            <h2>${news.title}</h2>
+                            <p><strong>Категория:</strong> ${news.category}</p>
+                            <p>${news.description}</p>
+                            <img src="../images/${news.image}" alt="News Image" style="max-width: 100%; height: auto;">
+                            <!-- Другие детали новости -->
+                        `;
+                    })
+                    .catch(error => console.error('Error loading news detail:', error));
+            } else {
+                console.error('Failed to extract Task ID from URL');
+            }
         });
+    
+        // Функция для возврата на страницу news-page
+        function goBack() {
+            window.location.href = '/news-page';
+        }
     </script>
 </body>
 </html>

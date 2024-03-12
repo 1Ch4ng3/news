@@ -72,8 +72,9 @@
 
     document.addEventListener('click', event => {
         if (event.target.classList.contains('btn-read-more')) {
-            const newsId = event.target.getAttribute('data-id'); // Используйте getAttribute('data-id') для получения newsId
-            window.location.href = `/newsDetail/${newsId}`; // Замените taskId на newsId
+            const taskId = event.target.getAttribute('data-id');
+            console.log('Clicked on Read More. News ID:', taskId);
+            window.location.href = `/newsDetail/${taskId}`;
         }
     });
 
