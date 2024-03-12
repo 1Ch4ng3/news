@@ -55,6 +55,17 @@ func main() {
 		w.Write(newsHTML)
 	})
 
+	router.HandleFunc("/newsDetail/{id}", func(w http.ResponseWriter, r *http.Request) {
+		// Загрузка и отправка HTML шаблона для отображения новостей в виде карточек
+		newsDetailHTML, err := ioutil.ReadFile("../frontend/newsDetail.html")
+		if err != nil {
+			http.Error(w, "Failed to read news.html", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html")
+		w.Write(newsDetailHTML)
+	})
+
 	router.HandleFunc("/newsByCategory/{categoryID}", func(w http.ResponseWriter, r *http.Request) {
 		tasksByCategory(w, r, db)
 	}).Methods("GET")
@@ -77,23 +88,9 @@ func main() {
 
 	// Настройка обработчика для получения подробной информации о новости
 		router.HandleFunc("/news_detail/{id}", func(w http.ResponseWriter, r *http.Request) {
-			vars := mux.Vars(r)
-			newsID := vars["id"]
-			
-			// Выполнение запроса к базе данных для получения подробной информации о новости по идентификатору
-			var news Task
-			err := db.QueryRow("SELECT * FROM tasks WHERE id = ?", newsID).Scan(&news.ID, &news.Title, &news.Description, &news.Image, &news.CategoryID, &news.CreatedAt, &news.UpdatedAt)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			
-			// Отправка JSON с данными о новости обратно клиенту
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(news)
+			taskByID(w, r, db)
 		}).Methods("GET")
-
+			
 		
 	// Start the HTTP server
 	fmt.Println("Server is running on http://localhost:8080")
@@ -103,6 +100,8 @@ func main() {
 func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
+
+
 
 func allCategory(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	enableCors(&w)
