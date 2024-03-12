@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Page</title>
+    <!-- Подключение Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Навигационное меню -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="/">Home</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item active">
+                    <a class="nav-link" href="/news-page">News</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Latest News</h1>
+        <div class="row" id="newsContainer">
+            <!-- Здесь будут отображаться новости -->
+        </div>
+    </div>
+
+    <!-- Подключение Bootstrap JS (необходимо для работы навигационного меню) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <!-- Подключение HTMX -->
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@1.6.1/dist/htmx.min.js"></script>
+
+    <!-- JavaScript код для загрузки новостей и обработки кнопки "Read More" -->
+    <script>
+        // Функция загрузки новостей
+        function loadNews() {
+        fetch('/news') // Запрос к серверу для получения списка новостей
+            .then(response => response.json()) // Преобразование ответа в формат JSON
+            .then(news => {
+                const newsContainer = document.getElementById('newsContainer');
+                news.forEach(item => {
+                    // Обрезаем описание до определенной длины символов
+                    const maxLength = 100; // Максимальная длина описания
+                    const description = item.description.length > maxLength ? item.description.substring(0, maxLength) + '...' : item.description;
+                    // Создание карточки для каждой новости
+                    const card = `
+                        <div class="col-md-4 mb-4">
+                            <div class="card">
+                                <img src="../images/${item.image}" class="card-img-top" alt="News Image">
+                                <div class="card-body">
+                                    <h5 class="card-title">${item.title}</h5>
+                                    <p class="card-text">${description}</p>
+                                    <button class="btn btn-primary btn-read-more" data-id="${item.id}">Read More</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    // Добавление карточки в контейнер
+                    newsContainer.innerHTML += card;
+                });
+            })
+            .catch(error => console.error('Error loading news:', error)); // Обработка ошибок
+    }
+
+    document.addEventListener('click', event => {
+        if (event.target.classList.contains('btn-read-more')) {
+            const newsId = event.target.getAttribute('data-id'); // Используйте getAttribute('data-id') для получения newsId
+            window.location.href = `/newsDetail/${newsId}`; // Замените taskId на newsId
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', loadNews);
+
+    </script>
+</body>
+</html>

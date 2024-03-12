@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Page</title>
+    <!-- Подключение Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Навигационное меню -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="/">Home</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/news-page">News</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Welcome to the Home Page</h1>
+        <p>This is the home page of your website. You can add your content here.</p>
+    </div>
+
+    <!-- Подключение HTMX -->
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@1.6.1/dist/htmx.min.js"></script>
+    <!-- Подключение Bootstrap JS (необходимо для работы навигационного меню) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <!-- Скрипт для выполнения асинхронного запроса при загрузке страницы -->
+    <script>
+        // Функция загрузки контента
+        function loadContent() {
+            fetch('/some-url') // Пример URL для запроса
+                .then(response => response.text()) // Преобразование ответа в текст
+                .then(data => {
+                    // Вставка полученного контента в контейнер
+                    document.getElementById('contentContainer').innerHTML = data;
+                })
+                .catch(error => console.error('Error loading content:', error)); // Обработка ошибок
+        }
+
+        // Выполнение загрузки контента при загрузке страницы
+        document.addEventListener('DOMContentLoaded', loadContent);
+    </script>
+</body>
+</html>
