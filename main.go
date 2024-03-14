@@ -56,6 +56,7 @@ func main() {
 	})
 
 	router.HandleFunc("/newsDetail/{id}", func(w http.ResponseWriter, r *http.Request) {
+
 		// Загрузка и отправка HTML шаблона для отображения новостей в виде карточек
 		newsDetailHTML, err := ioutil.ReadFile("../frontend/newsDetail.html")
 		if err != nil {
@@ -64,11 +65,12 @@ func main() {
 		}
 		w.Header().Set("Content-Type", "text/html")
 		w.Write(newsDetailHTML)
-	})
+	}).Methods("GET")
 
 	router.HandleFunc("/newsByCategory/{categoryID}", func(w http.ResponseWriter, r *http.Request) {
 		tasksByCategory(w, r, db)
 	}).Methods("GET")
+	
 
 	// Настройка обработки статических файлов из папки frontend
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -87,11 +89,10 @@ func main() {
 	})
 
 	// Настройка обработчика для получения подробной информации о новости
-		router.HandleFunc("/news_detail/{id}", func(w http.ResponseWriter, r *http.Request) {
-			taskByID(w, r, db)
-		}).Methods("GET")
-			
-		
+	router.HandleFunc("/news_detail/{id}", func(w http.ResponseWriter, r *http.Request) {
+		taskByID(w, r, db)
+	}).Methods("GET")
+
 	// Start the HTTP server
 	fmt.Println("Server is running on http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", router))
@@ -100,8 +101,6 @@ func main() {
 func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
-
-
 
 func allCategory(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	enableCors(&w)
@@ -226,41 +225,43 @@ func taskByID(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	}
 }
 
+// Обновленная функция для получения новостей по категории
 func tasksByCategory(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-	enableCors(&w)
-	// Извлекаем значение переменной маршрута "categoryID"
-	vars := mux.Vars(r)
-	categoryID := vars["categoryID"]
+    enableCors(&w)
+    // Извлекаем значение переменной маршрута "categoryID"
+    vars := mux.Vars(r)
+    categoryID := vars["categoryID"]
 
-	// Выполняем запрос к базе данных для получения задач по указанной категории
-	rows, err := db.Query("SELECT * FROM tasks WHERE category_id = ?", categoryID)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer rows.Close()
+    // Выполняем запрос к базе данных для получения новостей по указанной категории
+    rows, err := db.Query("SELECT * FROM tasks WHERE category_id = ?", categoryID)
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+    defer rows.Close()
 
-	// Формируем слайс структур для хранения данных о задачах
-	var tasks []Task
+    // Формируем слайс структур для хранения данных о задачах
+    var tasks []Task
 
-	// Итерируем по строкам результата запроса
-	for rows.Next() {
-		var task Task
+    // Итерируем по строкам результата запроса
+    for rows.Next() {
+        var task Task
 
-		// Извлекаем значения всех столбцов из строки результата запроса
-		if err := rows.Scan(&task.ID, &task.Title, &task.Description, &task.Image, &task.CategoryID, &task.CreatedAt, &task.UpdatedAt); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+        // Извлекаем значения всех столбцов из строки результата запроса
+        if err := rows.Scan(&task.ID, &task.Title, &task.Description, &task.Image, &task.CategoryID, &task.CreatedAt, &task.UpdatedAt); err != nil {
+            http.Error(w, err.Error(), http.StatusInternalServerError)
+            return
+        }
 
-		// Добавляем структуру с данными об отдельной задаче в слайс задач
-		tasks = append(tasks, task)
-	}
+        // Добавляем структуру с данными об отдельной задаче в слайс задач
+        tasks = append(tasks, task)
+    }
 
-	// Преобразуем слайс структур в JSON и отправляем в ответ на запрос
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(tasks); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+    // Преобразуем слайс структур в JSON и отправляем в ответ на запрос
+    w.Header().Set("Content-Type", "application/json")
+    if err := json.NewEncoder(w).Encode(tasks); err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
 }
+
