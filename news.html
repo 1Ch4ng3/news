@@ -25,9 +25,19 @@
 
     <div class="container">
         <h1>Latest News</h1>
-        <div class="row" id="newsContainer">
-            <!-- Здесь будут отображаться новости -->
+        
+        <!-- Добавлен выпадающий список для выбора категории -->
+        <div class="form-group">
+            <label for="categoryDropdown">Select Category:</label>
+            <select class="form-control" id="categoryDropdown">
+                <!-- Варианты категорий будут загружены динамически из базы данных -->
+            </select>
         </div>
+        
+        <!-- Список для отображения новостей -->
+        <ul id="newsContainer" class="list-group">
+            <!-- Здесь будут отображаться новости -->
+        </ul>
     </div>
 
     <!-- Подключение Bootstrap JS (необходимо для работы навигационного меню) -->
@@ -38,48 +48,115 @@
     <!-- Подключение HTMX -->
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@1.6.1/dist/htmx.min.js"></script>
 
-    <!-- JavaScript код для загрузки новостей и обработки кнопки "Read More" -->
+    <!-- JavaScript код для загрузки категорий и новостей -->
     <script>
+        // Функция загрузки категорий
+        function loadCategories() {
+            fetch('/category') // Запрос к серверу для получения списка категорий
+                .then(response => response.json()) // Преобразование ответа в формат JSON
+                .then(categories => {
+                    const categoryDropdown = document.getElementById('categoryDropdown');
+                    // Очищаем выпадающий список перед добавлением новых категорий
+                    categoryDropdown.innerHTML = '';
+    
+                    // Добавляем категории в выпадающий список
+                    categories.forEach(category => {
+                        const option = document.createElement('option');
+                        option.text = category;
+                        option.value = category;
+                        categoryDropdown.add(option);
+                    });
+                })
+                .catch(error => console.error('Error loading categories:', error)); // Обработка ошибок
+        }
+    
         // Функция загрузки новостей
         function loadNews() {
-        fetch('/news') // Запрос к серверу для получения списка новостей
-            .then(response => response.json()) // Преобразование ответа в формат JSON
-            .then(news => {
-                const newsContainer = document.getElementById('newsContainer');
-                news.forEach(item => {
-                    // Обрезаем описание до определенной длины символов
-                    const maxLength = 100; // Максимальная длина описания
-                    const description = item.description.length > maxLength ? item.description.substring(0, maxLength) + '...' : item.description;
-                    // Создание карточки для каждой новости
-                    const card = `
-                        <div class="col-md-4 mb-4">
-                            <div class="card">
-                                <img src="../images/${item.image}" class="card-img-top" alt="News Image">
-                                <div class="card-body">
-                                    <h5 class="card-title">${item.title}</h5>
-                                    <p class="card-text">${description}</p>
-                                    <button class="btn btn-primary btn-read-more" data-id="${item.id}">Read More</button>
+            fetch('/news') // Запрос к серверу для получения списка новостей
+                .then(response => response.json()) // Преобразование ответа в формат JSON
+                .then(news => {
+                    const newsContainer = document.getElementById('newsContainer');
+    
+                    // Очищаем контейнер перед добавлением новых элементов
+                    newsContainer.innerHTML = '';
+    
+                    news.forEach(item => {
+                        // Обрезаем описание до определенной длины символов
+                        const maxLength = 100; // Максимальная длина описания
+                        const description = item.description.length > maxLength ? item.description.substring(0, maxLength) + '...' : item.description;
+                        // Создание элемента списка для каждой новости
+                        const listItem = `
+                            <li class="list-group-item">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <img src="../images/${item.image}" class="img-fluid" alt="News Image">
+                                    </div>
+                                    <div class="col-md-9">
+                                        <h5>${item.title}</h5>
+                                        <p>${description}</p>
+                                        <button class="btn btn-primary btn-read-more" onclick="redirectToNewsDetail(${item.id})">Read More</button>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    `;
-                    // Добавление карточки в контейнер
-                    newsContainer.innerHTML += card;
-                });
-            })
-            .catch(error => console.error('Error loading news:', error)); // Обработка ошибок
-    }
-
-    document.addEventListener('click', event => {
-        if (event.target.classList.contains('btn-read-more')) {
-            const taskId = event.target.getAttribute('data-id');
-            console.log('Clicked on Read More. News ID:', taskId);
-            window.location.href = `/newsDetail/${taskId}`;
+                            </li>
+                        `;
+                        // Добавление элемента списка в контейнер
+                        newsContainer.innerHTML += listItem;
+                    });
+                })
+                .catch(error => console.error('Error loading news:', error)); // Обработка ошибок
         }
-    });
+    
+        // Функция для перенаправления на страницу с подробной информацией о новости
+         function redirectToNewsDetail(newsId) {
+            window.location.href = `/newsDetail/${newsId}`; // Перенаправление на страницу с подробной информацией о новости
+         }
 
-    document.addEventListener('DOMContentLoaded', loadNews);
+        // Функция загрузки новостей по выбранной категории
+        function loadNewsByCategory(selectedCategory) {
+            fetch(`/newsByCategory/${selectedCategory}`) // Отправляем запрос на сервер с выбранной категорией
+                .then(response => response.json())
+                .then(news => {
+                    // Очищаем содержимое контейнера новостей
+                    const newsContainer = document.getElementById('newsContainer');
+                    newsContainer.innerHTML = '';
 
+                    // Добавляем новости в контейнер
+                    news.forEach(item => {
+                        const maxLength = 100; // Максимальная длина описания
+                        const description = item.description.length > maxLength ? item.description.substring(0, maxLength) + '...' : item.description;
+                        const listItem = `
+                            <li class="list-group-item">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <img src="../images/${item.image}" class="img-fluid" alt="News Image">
+                                    </div>
+                                    <div class="col-md-9">
+                                        <h5>${item.title}</h5>
+                                        <p>${description}</p>
+                                        <button class="btn btn-primary btn-read-more" onclick="redirectToNewsDetail(${item.id})">Read More</button>
+                                    </div>
+                                </div>
+                            </li>
+                        `;
+                        // Добавление новости в контейнер
+                        newsContainer.innerHTML += listItem;
+                    });
+                })
+                .catch(error => console.error('Error loading news by category:', error));
+        }
+
+        // Загрузка категорий и новостей при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            loadNews(); // Загрузка всех новостей при загрузке страницы
+            loadCategories(); // Загрузка категорий
+        });
+
+        // Обработчик события при выборе категории
+        document.getElementById('categoryDropdown').addEventListener('change', function() {
+            const selectedCategory = this.value; // Получаем выбранную категорию
+            loadNewsByCategory(selectedCategory); // Загружаем новости по выбранной категории
+        });
     </script>
+    
 </body>
 </html>
